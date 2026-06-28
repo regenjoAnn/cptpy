@@ -8,5 +8,6 @@ dist
 *.ipynb_checkpoints
 *.png
 .tox
+.venv
 tests/htmlcov
 tests/.coverage

@@ -271,7 +271,7 @@ class CPT():
         """
         isbt = self.isbt(procedure=procedure)
 
-        register = {"Robertson 2010": CPT._isbt_to_sbt_robertson_2010}
+        register = {"Robertson 2010": self._isbt_to_sbt_robertson_2010}
         decoder = register[procedure]
         sbt = decoder(isbt)
 
@@ -280,11 +280,13 @@ class CPT():
     def _isbt_to_sbt_robertson_2010(self, isbt):
         """Translate isbt to sbt."""
         zone = np.empty(len(self), dtype=int)
-        sbt = np.empty(len(self), dtype=str)
+        # Use object dtype so full soil-type strings are stored (a numpy
+        # str dtype defaults to '<U1' and would truncate to one character).
+        sbt = np.empty(len(self), dtype=object)
         rfs = self.rf
-        eqas = qc/PA >= 1/(0.006*(rfs-0.9) - 0.004*(rfs-0.9)*(rfs-0.9) - 0.005)
-        qc_on_pas = qc/PA
-        for i, (qc_on_pa, rf, eqa) in enumerate(zip(qc_on_pas, rfs, eqas)):
+        qc_on_pas = self.qc/PA
+        eqas = qc_on_pas >= 1/(0.006*(rfs-0.9) - 0.004*(rfs-0.9)*(rfs-0.9) - 0.005)
+        for i, (qc_on_pa, rf, eqa, isbt_i) in enumerate(zip(qc_on_pas, rfs, eqas, isbt)):
             if rf > 1.5 and rf < 4.5 and eqa:
                 zone[i] = 8
                 sbt[i] = "Stiff Sand to Clayed Sand"
@@ -294,22 +296,22 @@ class CPT():
             elif qc_on_pa < 12*np.exp(-1.4*rf):
                 zone[i] = 1
                 sbt[i] = "Sensitive Fine-Grained"
-            elif isbt > 3.6:
+            elif isbt_i > 3.6:
                 zone[i] = 2
                 sbt[i] = "Organic Soils"
-            elif isbt > 2.95:
+            elif isbt_i > 2.95:
                 zone[i] = 3
                 sbt[i] = "Clays"
-            elif isbt > 2.6:
+            elif isbt_i > 2.6:
                 zone[i] = 4
                 sbt[i] = "Silt Mixtures"
-            elif isbt > 2.05:
+            elif isbt_i > 2.05:
                 zone[i] = 5
                 sbt[i] = "Sand Mixtures"
-            elif isbt > 1.31:
+            elif isbt_i > 1.31:
                 zone[i] = 6
                 sbt[i] = "Sands"
-            elif isbt < 1.31:
+            elif isbt_i < 1.31:
                 zone[i] = 7
                 sbt[i] = "Gravelly to Dense Sand"
             else:
