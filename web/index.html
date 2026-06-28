@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CPT Soil Profiler</title>
+<style>
+  :root {
+    --paper: #f7f4ee;
+    --paper-2: #fffdf9;
+    --card: #ffffff;
+    --line: #e7e1d5;
+    --line-strong: #d8d0bf;
+    --ink: #23201b;
+    --ink-2: #5f584c;
+    --ink-3: #8a8275;
+    --accent: #b5712a;
+    --accent-soft: #f0e2cf;
+    --good: #4e7d4e;
+    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(35,32,27,.05), 0 6px 24px rgba(35,32,27,.06);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    font-size: 15px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* Masthead */
+  header.masthead {
+    border-bottom: 1px solid var(--line);
+    padding: 40px 0 28px;
+    margin-bottom: 32px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.05;
+    letter-spacing: -.01em;
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+  .lede {
+    margin: 0;
+    max-width: 60ch;
+    color: var(--ink-2);
+    font-size: 16px;
+  }
+  .lede strong { color: var(--ink); font-weight: 600; }
+
+  /* Dropzone */
+  .drop {
+    margin: 28px 0 8px;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--paper-2);
+    padding: 36px 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .drop:hover { border-color: var(--accent); background: #fffaf2; }
+  .drop.over { border-color: var(--accent); background: var(--accent-soft); transform: scale(1.004); }
+  .drop:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .drop .big { font-family: var(--serif); font-size: 20px; margin: 0 0 6px; }
+  .drop .sub { color: var(--ink-3); font-size: 13.5px; margin: 0; }
+  .drop .bit {
+    display: inline-block; margin-bottom: 14px; font-size: 22px;
+    color: var(--accent);
+  }
+  .privacy {
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-3);
+    text-align: center; margin: 14px 0 0; letter-spacing: .02em;
+  }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    justify-content: space-between; margin: 32px 0 18px;
+  }
+  .toolbar h2 {
+    font-family: var(--serif); font-weight: 600; font-size: 22px; margin: 0;
+  }
+  .btn {
+    font-family: var(--sans); font-size: 13.5px; font-weight: 600;
+    border: 1px solid var(--line-strong); background: var(--card);
+    color: var(--ink); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #9c5f20; }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.ghost { background: transparent; }
+
+  /* Log card */
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    margin-bottom: 26px; overflow: hidden;
+    animation: rise .35s ease both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+
+  .card-head {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 18px;
+    padding: 20px 24px; border-bottom: 1px solid var(--line);
+  }
+  .hole { font-family: var(--serif); font-size: 22px; font-weight: 600; margin: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-left: auto; align-items: center; }
+  .chip { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+  .chip b { color: var(--ink); font-weight: 600; }
+  .dom {
+    font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: #fff;
+    padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+  }
+
+  .card-body { display: grid; grid-template-columns: minmax(0, 360px) 1fr; gap: 0; }
+  @media (max-width: 760px) { .card-body { grid-template-columns: 1fr; } }
+
+  .log-pane { padding: 18px 8px 18px 18px; border-right: 1px solid var(--line); }
+  @media (max-width: 760px) { .log-pane { border-right: none; border-bottom: 1px solid var(--line); } }
+  .log-cv { width: 100%; height: 460px; display: block; }
+  .log-cap {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .04em;
+    color: var(--ink-3); text-transform: uppercase; text-align: center; margin: 4px 0 0;
+  }
+
+  .comp-pane { padding: 20px 24px; }
+  .comp-pane h3 {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-3); margin: 0 0 12px; font-weight: 600;
+  }
+  .stacked { display: flex; height: 16px; border-radius: 5px; overflow: hidden; margin-bottom: 16px; border: 1px solid var(--line); }
+  .stacked span { display: block; height: 100%; }
+  .legend { display: flex; flex-direction: column; gap: 7px; margin: 0 0 18px; }
+  .legrow { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .sw { width: 13px; height: 13px; border-radius: 3px; flex: none; border: 1px solid rgba(0,0,0,.12); }
+  .legrow .nm { color: var(--ink); }
+  .legrow .pc { margin-left: auto; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px; padding-top: 4px; border-top: 1px solid var(--line); }
+  .stat .k { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .stat .v { font-family: var(--mono); font-size: 16px; font-variant-numeric: tabular-nums; color: var(--ink); }
+  .stat .v small { font-size: 11px; color: var(--ink-3); }
+
+  .table-wrap { border-top: 1px solid var(--line); }
+  details { padding: 0 24px; }
+  summary {
+    list-style: none; cursor: pointer; padding: 14px 0;
+    font-family: var(--mono); font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸"; color: var(--accent); }
+  details[open] summary::before { content: "▾"; }
+  .scroll { overflow-x: auto; padding-bottom: 16px; }
+  table { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 5px 10px; white-space: nowrap; }
+  th { color: var(--ink-3); font-weight: 600; border-bottom: 1px solid var(--line-strong); text-transform: uppercase; font-size: 10.5px; letter-spacing: .05em; }
+  td { border-bottom: 1px solid #f1ece2; color: var(--ink-2); }
+  td.soil { text-align: left; color: var(--ink); }
+  td .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px; vertical-align: middle; }
+  .more { text-align: center; color: var(--ink-3); font-size: 12px; padding: 10px 0 0; font-family: var(--mono); }
+  .dl { display: flex; gap: 10px; padding: 0 24px 22px; }
+
+  .empty { color: var(--ink-3); font-size: 14px; padding: 8px 0; }
+  footer { margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 12.5px; }
+  footer code { font-family: var(--mono); color: var(--ink-2); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <p class="eyebrow">Cone Penetration Test · Robertson 2010</p>
+    <h1>CPT Soil Profiler</h1>
+    <p class="lede">Drop a vendor <strong>.cpt</strong> sounding to read it, classify the soil behaviour type down the full profile, and export the results — all <strong>in your browser</strong>.</p>
+
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Drop .cpt files or click to browse">
+      <span class="bit" aria-hidden="true">⏚</span>
+      <p class="big">Drop .cpt files here</p>
+      <p class="sub">or click to browse · one file or many at once</p>
+    </div>
+    <input type="file" id="file" accept=".cpt" multiple hidden>
+    <p class="privacy">Files are read locally — nothing is uploaded or stored.</p>
+  </header>
+
+  <div class="toolbar" id="toolbar" hidden>
+    <h2 id="count"></h2>
+    <div>
+      <button class="btn ghost" id="clear">Clear</button>
+      <button class="btn primary" id="dlall" hidden>Download all (combined CSV)</button>
+    </div>
+  </div>
+
+  <div id="results">
+    <p class="empty" id="hint">No soundings loaded yet.</p>
+  </div>
+
+  <footer>
+    Soil behaviour type by the non-normalized <code>Isbt</code> method of Robertson (2010).
+    Assumes QC in MPa and FS in kPa (the common vendor convention). Results mirror the
+    <code>cptpy</code> Python package.
+  </footer>
+</div>
+
+<script src="cpt.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var SOILS = {
+    1: { name: "Sensitive Fine-Grained", color: "#9c4a6b" },
+    2: { name: "Organic Soils",          color: "#4e3b2a" },
+    3: { name: "Clays",                  color: "#2e7d6b" },
+    4: { name: "Silt Mixtures",          color: "#7ba05b" },
+    5: { name: "Sand Mixtures",          color: "#c2a14d" },
+    6: { name: "Sands",                  color: "#e0a93b" },
+    7: { name: "Gravelly to Dense Sand", color: "#c9702b" },
+    8: { name: "Stiff Sand to Clayed Sand", color: "#8194a8" },
+    9: { name: "Stiff Fine-Grained",     color: "#5e6b7a" },
+    0: { name: "Unknown Soil Type",      color: "#b8b2a6" }
+  };
+  function colorFor(zone) { return (SOILS[zone] || SOILS[0]).color; }
+
+  var loaded = []; // {name, hole, date, ma, parsed}
+  var drop = document.getElementById("drop");
+  var fileInput = document.getElementById("file");
+  var results = document.getElementById("results");
+  var hint = document.getElementById("hint");
+  var toolbar = document.getElementById("toolbar");
+  var countEl = document.getElementById("count");
+  var dlAllBtn = document.getElementById("dlall");
+
+  // ---- file intake -------------------------------------------------
+  drop.addEventListener("click", function () { fileInput.click(); });
+  drop.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener("change", function (e) { handleFiles(e.target.files); fileInput.value = ""; });
+  ["dragenter", "dragover"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add("over"); });
+  });
+  ["dragleave", "drop"].forEach(function (ev) {
+    drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove("over"); });
+  });
+  drop.addEventListener("drop", function (e) {
+    if (e.dataTransfer && e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+  });
+  document.getElementById("clear").addEventListener("click", function () {
+    loaded = []; render();
+  });
+  dlAllBtn.addEventListener("click", downloadAll);
+
+  function handleFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList).filter(function (f) {
+      return /\.cpt$/i.test(f.name);
+    });
+    if (!files.length) return;
+    var pending = files.length;
+    files.forEach(function (file) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var parsed = CPT.analyze(CPT.readCpt(reader.result));
+          if (parsed.n) {
+            loaded.push({
+              name: file.name,
+              hole: parsed.metadata.HK || file.name.replace(/\.cpt$/i, ""),
+              date: parsed.metadata.HD || "",
+              ma: parsed.metadata.MA || "",
+              parsed: parsed
+            });
+          }
+        } catch (err) { /* skip unreadable file */ }
+        if (--pending === 0) render();
+      };
+      reader.readAsText(file, "ISO-8859-1");
+    });
+  }
+
+  // ---- rendering ---------------------------------------------------
+  function render() {
+    results.innerHTML = "";
+    if (!loaded.length) {
+      results.appendChild(hint);
+      toolbar.hidden = true;
+      return;
+    }
+    toolbar.hidden = false;
+    countEl.textContent = loaded.length + (loaded.length === 1 ? " sounding" : " soundings") + " loaded";
+    dlAllBtn.hidden = loaded.length < 2;
+    loaded.forEach(function (item, idx) { results.appendChild(buildCard(item, idx)); });
+    loaded.forEach(function (item, idx) { drawLog(document.getElementById("cv-" + idx), item.parsed.rows); });
+  }
+
+  function breakdown(rows) {
+    var counts = {};
+    rows.forEach(function (r) { counts[r.zone] = (counts[r.zone] || 0) + 1; });
+    return Object.keys(counts)
+      .map(function (z) { return { zone: +z, n: counts[z], pct: counts[z] / rows.length * 100 }; })
+      .sort(function (a, b) { return b.n - a.n; });
+  }
+
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html !== undefined) n.innerHTML = html;
+    return n;
+  }
+
+  function buildCard(item, idx) {
+    var rows = item.parsed.rows;
+    var bd = breakdown(rows);
+    var dom = bd[0];
+    var depths = rows.map(function (r) { return r.depth; });
+    var maxd = Math.max.apply(null, depths);
+    var mind = Math.min.apply(null, depths);
+
+    var card = el("div", "card");
+
+    // Head
+    var head = el("div", "card-head");
+    head.appendChild(el("p", "hole", esc(item.hole)));
+    var chips = el("div", "chips");
+    if (item.date) chips.appendChild(el("span", "chip", "<b>" + esc(item.date) + "</b>"));
+    chips.appendChild(el("span", "chip", rows.length + " readings"));
+    chips.appendChild(el("span", "chip", "<b>" + maxd.toFixed(2) + "</b> m"));
+    var domPill = el("span", "dom", esc(SOILS[dom.zone].name) + " · " + Math.round(dom.pct) + "%");
+    domPill.style.background = colorFor(dom.zone);
+    chips.appendChild(domPill);
+    head.appendChild(chips);
+    card.appendChild(head);
+
+    // Body
+    var body = el("div", "card-body");
+
+    var logPane = el("div", "log-pane");
+    var cv = el("canvas", "log-cv");
+    cv.id = "cv-" + idx;
+    logPane.appendChild(cv);
+    logPane.appendChild(el("p", "log-cap", "qc (MPa) · soil behaviour vs depth (m)"));
+    body.appendChild(logPane);
+
+    var comp = el("div", "comp-pane");
+    comp.appendChild(el("h3", null, "Soil composition"));
+    var stack = el("div", "stacked");
+    bd.forEach(function (b) {
+      var s = el("span");
+      s.style.width = b.pct + "%";
+      s.style.background = colorFor(b.zone);
+      s.title = SOILS[b.zone].name + " — " + b.pct.toFixed(1) + "%";
+      stack.appendChild(s);
+    });
+    comp.appendChild(stack);
+
+    var legend = el("div", "legend");
+    bd.forEach(function (b) {
+      var row = el("div", "legrow");
+      var sw = el("span", "sw"); sw.style.background = colorFor(b.zone);
+      row.appendChild(sw);
+      row.appendChild(el("span", "nm", esc(SOILS[b.zone].name)));
+      row.appendChild(el("span", "pc", b.pct.toFixed(1) + "%"));
+      legend.appendChild(row);
+    });
+    comp.appendChild(legend);
+
+    // Stats
+    var qcs = rows.map(function (r) { return r.qc; });
+    var rfs = rows.map(function (r) { return r.rf; }).filter(isFinite);
+    var stats = el("div", "stats");
+    stats.appendChild(stat("Depth range", mind.toFixed(2) + "–" + maxd.toFixed(2) + " <small>m</small>"));
+    stats.appendChild(stat("qc range", (Math.min.apply(null, qcs) / 1000).toFixed(2) + "–" + (Math.max.apply(null, qcs) / 1000).toFixed(1) + " <small>MPa</small>"));
+    stats.appendChild(stat("Median Rf", median(rfs).toFixed(2) + " <small>%</small>"));
+    stats.appendChild(stat("Soil types", bd.length + ""));
+    comp.appendChild(stats);
+    body.appendChild(comp);
+    card.appendChild(body);
+
+    // Table (collapsible)
+    var tw = el("div", "table-wrap");
+    var det = document.createElement("details");
+    var sum = document.createElement("summary");
+    sum.textContent = "Per-depth data (" + rows.length + " readings)";
+    det.appendChild(sum);
+    var scroll = el("div", "scroll");
+    scroll.appendChild(buildTable(rows, item.parsed.hasU2));
+    det.appendChild(scroll);
+    tw.appendChild(det);
+    card.appendChild(tw);
+
+    // Downloads
+    var dl = el("div", "dl");
+    var b1 = el("button", "btn", "Download CSV");
+    b1.addEventListener("click", function () { downloadOne(item); });
+    dl.appendChild(b1);
+    card.appendChild(dl);
+
+    return card;
+  }
+
+  function stat(k, v) {
+    var s = el("div", "stat");
+    s.appendChild(el("div", "k", k));
+    s.appendChild(el("div", "v", v));
+    return s;
+  }
+
+  function buildTable(rows, hasU2) {
+    var t = document.createElement("table");
+    var cols = ["depth (m)", "qc (kPa)", "fs (kPa)"];
+    if (hasU2) cols.push("u2 (kPa)");
+    cols = cols.concat(["Rf %", "Isbt", "soil type"]);
+    var thead = el("thead");
+    var htr = el("tr");
+    cols.forEach(function (c) { htr.appendChild(el("th", null, c)); });
+    thead.appendChild(htr); t.appendChild(thead);
+    var tb = el("tbody");
+    var limit = Math.min(rows.length, 60);
+    for (var i = 0; i < limit; i++) {
+      var r = rows[i];
+      var tr = el("tr");
+      tr.appendChild(el("td", null, r.depth.toFixed(2)));
+      tr.appendChild(el("td", null, r.qc.toFixed(1)));
+      tr.appendChild(el("td", null, r.fs.toFixed(1)));
+      if (hasU2) tr.appendChild(el("td", null, (r.u2 != null ? r.u2.toFixed(1) : "")));
+      tr.appendChild(el("td", null, isFinite(r.rf) ? r.rf.toFixed(2) : "—"));
+      tr.appendChild(el("td", null, isFinite(r.isbt) ? r.isbt.toFixed(2) : "—"));
+      var td = el("td", "soil");
+      td.innerHTML = '<span class="dot" style="background:' + colorFor(r.zone) + '"></span>' + esc(r.soil);
+      tr.appendChild(td);
+      tb.appendChild(tr);
+    }
+    t.appendChild(tb);
+    if (rows.length > limit) {
+      var wrap = document.createElement("div");
+      wrap.appendChild(t);
+      wrap.appendChild(el("p", "more", "… " + (rows.length - limit) + " more rows — download the CSV for all."));
+      return wrap;
+    }
+    return t;
+  }
+
+  // ---- depth log on canvas ----------------------------------------
+  function drawLog(canvas, rows) {
+    if (!canvas) return;
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = canvas.clientWidth || 340;
+    var cssH = canvas.clientHeight || 460;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    var ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    var padT = 22, padB = 16, padL = 34;
+    var soilW = 46, gap = 14;
+    var qcX = padL, qcW = cssW - padL - soilW - gap - 4;
+    var soilX = cssW - soilW - 2;
+    var top = padT, bot = cssH - padB, H = bot - top;
+
+    var maxd = rows[rows.length - 1].depth;
+    var maxqc = 0;
+    rows.forEach(function (r) { if (r.qc > maxqc) maxqc = r.qc; });
+    maxqc = maxqc / 1000; // MPa
+    var niceMax = Math.ceil(maxqc / 5) * 5 || 5;
+
+    function yOf(d) { return top + (d / maxd) * H; }
+
+    // depth gridlines + labels
+    ctx.font = "10px ui-monospace, Menlo, monospace";
+    ctx.textBaseline = "middle";
+    var step = maxd > 16 ? 4 : 2;
+    for (var d = 0; d <= maxd + 0.001; d += step) {
+      var y = yOf(d);
+      ctx.strokeStyle = "#efe9dd";
+      ctx.beginPath(); ctx.moveTo(qcX, y); ctx.lineTo(soilX + soilW, y); ctx.stroke();
+      ctx.fillStyle = "#8a8275";
+      ctx.textAlign = "left";
+      ctx.fillText(d.toFixed(0), 2, y);
+    }
+
+    // qc axis frame + ticks
+    ctx.strokeStyle = "#d8d0bf";
+    ctx.strokeRect(qcX, top, qcW, H);
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#8a8275";
+    for (var q = 0; q <= niceMax; q += (niceMax / 4)) {
+      var x = qcX + (q / niceMax) * qcW;
+      ctx.strokeStyle = "#f2ede3";
+      ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bot); ctx.stroke();
+      ctx.fillText(q.toFixed(0), x, top - 10);
+    }
+
+    // qc curve (area + line)
+    ctx.beginPath();
+    rows.forEach(function (r, i) {
+      var x = qcX + Math.min(1, (r.qc / 1000) / niceMax) * qcW;
+      var y = yOf(r.depth);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.lineTo(qcX, bot); ctx.lineTo(qcX, top); ctx.closePath();
+    ctx.fillStyle = "rgba(181,113,42,.10)"; ctx.fill();
+    ctx.beginPath();
+    rows.forEach(function (r, i) {
+      var x = qcX + Math.min(1, (r.qc / 1000) / niceMax) * qcW;
+      var y = yOf(r.depth);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = "#b5712a"; ctx.lineWidth = 1.2; ctx.stroke();
+
+    // soil column
+    for (var i = 0; i < rows.length; i++) {
+      var y1 = yOf(rows[i].depth);
+      var y2 = i < rows.length - 1 ? yOf(rows[i + 1].depth) : bot;
+      ctx.fillStyle = colorFor(rows[i].zone);
+      ctx.fillRect(soilX, y1, soilW, (y2 - y1) + 0.6);
+    }
+    ctx.strokeStyle = "#d8d0bf"; ctx.strokeRect(soilX, top, soilW, H);
+
+    // track labels
+    ctx.fillStyle = "#8a8275";
+    ctx.textAlign = "center";
+    ctx.fillText("qc", qcX + qcW / 2, bot + 10);
+    ctx.fillText("SBT", soilX + soilW / 2, bot + 10);
+  }
+
+  // ---- CSV export --------------------------------------------------
+  var HEADER = "hole_id,file,depth_m,qc_kPa,fs_kPa,u2_kPa,Rf_pct,Isbt,zone,soil_type\n";
+  function rowsToCsv(item) {
+    var out = "";
+    item.parsed.rows.forEach(function (r) {
+      out += [item.hole, item.name, r.depth.toFixed(3), r.qc.toFixed(2), r.fs.toFixed(2),
+        (r.u2 != null ? r.u2.toFixed(2) : ""), isFinite(r.rf) ? r.rf.toFixed(3) : "",
+        isFinite(r.isbt) ? r.isbt.toFixed(3) : "", r.zone,
+        '"' + r.soil + '"'].join(",") + "\n";
+    });
+    return out;
+  }
+  function downloadOne(item) {
+    save(HEADER + rowsToCsv(item), item.name.replace(/\.cpt$/i, "") + "_results.csv");
+  }
+  function downloadAll() {
+    var csv = HEADER;
+    loaded.forEach(function (item) { csv += rowsToCsv(item); });
+    save(csv, "all_soundings_results.csv");
+  }
+  function save(text, fname) {
+    var blob = new Blob([text], { type: "text/csv" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = fname; a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  // ---- helpers -----------------------------------------------------
+  function median(a) {
+    if (!a.length) return NaN;
+    var s = a.slice().sort(function (x, y) { return x - y; });
+    var m = Math.floor(s.length / 2);
+    return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+  }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+
+  window.addEventListener("resize", function () {
+    loaded.forEach(function (item, idx) { drawLog(document.getElementById("cv-" + idx), item.parsed.rows); });
+  });
+})();
+</script>
+</body>
+</html>

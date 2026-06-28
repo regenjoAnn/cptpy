@@ -11,3 +11,6 @@ dist
 .venv
 tests/htmlcov
 tests/.coverage
+
+# Local preview / editor config
+.claude

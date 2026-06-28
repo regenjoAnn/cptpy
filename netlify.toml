@@ -1,0 +1,3 @@
+# Netlify configuration for the CPT Soil Profiler static site.
+[build]
+  publish = "web"
